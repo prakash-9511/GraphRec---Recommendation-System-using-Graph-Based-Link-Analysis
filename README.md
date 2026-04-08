@@ -1,4 +1,4 @@
-#GraphRec — Graph-Based Recommendation System with UI
+# GraphRec — Graph-Based Recommendation System with UI
 
 
 ---
