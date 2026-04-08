@@ -1,1 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GraphRec</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c0f;--bg2:#111318;--bg3:#181c22;--bg4:#1e2330;
+  --border:#ffffff12;--border2:#ffffff20;--border3:#ffffff35;
+  --text:#e8eaf0;--text2:#9da3b4;--text3:#5c6378;
+  --accent:#4fffb0;--accent2:#00d4ff;--accent3:#ff6b6b;
+  --amber:#fbbf24;--purple:#a78bfa;
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --r:10px;--r2:16px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;min-height:100vh;overflow-x:hidden}
 
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:3px}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo-title{font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--text);line-height:1.1}
+.logo-sub{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px;letter-spacing:.05em}
+.logo-badge{display:inline-block;font-family:var(--font-mono);font-size:9px;background:var(--accent);color:#000;padding:1px 6px;border-radius:3px;margin-top:6px;font-weight:500;letter-spacing:.04em}
+nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-section{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--text3);padding:10px 10px 6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .15s;color:var(--text2);font-size:13px;font-weight:400;border:1px solid transparent;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg4);color:var(--accent);border-color:var(--border2)}
+.nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:6px;transition:background .3s}
+.status-dot.ready{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.status-dot.loading{background:var(--amber);animation:pulse 1s infinite}
+.status-dot.error{background:var(--accent3)}
+.status-label{font-family:var(--font-mono);font-size:11px;color:var(--text2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Main ─────────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;min-width:0}
+.page{display:none;padding:32px 36px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Typography ───────────────────────────────────────── */
+.page-header{margin-bottom:28px}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1}
+.page-desc{color:var(--text2);font-size:13px;margin-top:6px;line-height:1.5}
+.section-title{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Cards ────────────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.stat-card:hover{border-color:var(--border3)}
+.stat-value{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.04em;line-height:1}
+.stat-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ── Init screen ──────────────────────────────────────── */
+#init-overlay{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.init-box{width:420px;text-align:center}
+.init-title{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-.04em;color:var(--text);line-height:1.1}
+.init-sub{color:var(--text2);font-size:13px;margin-top:10px}
+.init-logo{font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:.06em}
+.init-progress{margin-top:32px}
+.progress-track{background:var(--bg3);border:1px solid var(--border);border-radius:4px;height:6px;overflow:hidden;margin-bottom:10px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;width:0%;transition:width .5s ease}
+.progress-msg{font-family:var(--font-mono);font-size:11px;color:var(--text2);min-height:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font-body);font-size:13px;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:#3de89c;transform:translateY(-1px)}
+.btn-primary:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;transform:none}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--bg4);border-color:var(--border3)}
+
+/* ── User selector ────────────────────────────────────── */
+.user-select-row{display:flex;gap:10px;margin-bottom:24px;align-items:center;flex-wrap:wrap}
+.search-input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:9px 14px;font-family:var(--font-body);font-size:13px;outline:none;transition:border-color .15s;width:200px}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,255,176,.08)}
+.search-input::placeholder{color:var(--text3)}
+select.search-input{cursor:pointer}
+
+/* ── Recommendation cards ─────────────────────────────── */
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.rec-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;transition:all .2s;animation:slideUp .3s ease both}
+.rec-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.rec-rank{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.06em;margin-bottom:6px}
+.rec-name{font-weight:500;font-size:14px;color:var(--text);margin-bottom:4px;line-height:1.3}
+.rec-cat{display:inline-block;font-family:var(--font-mono);font-size:9px;padding:2px 7px;border-radius:3px;margin-bottom:10px;border:1px solid}
+.rec-meta{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:10px}
+.rec-price{color:var(--amber);font-weight:500}
+.rec-score{color:var(--text3)}
+.rec-bar{height:3px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden}
+.rec-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .6s ease}
+
+/* category colors */
+.cat-Electronics{color:#60a5fa;border-color:#60a5fa30;background:#60a5fa08}
+.cat-Books{color:#a78bfa;border-color:#a78bfa30;background:#a78bfa08}
+.cat-Clothing{color:#f472b6;border-color:#f472b630;background:#f472b608}
+.cat-Home{color:#34d399;border-color:#34d39930;background:#34d39908}
+.cat-Sports{color:#fbbf24;border-color:#fbbf2430;background:#fbbf2408}
+.cat-Toys{color:#fb923c;border-color:#fb923c30;background:#fb923c08}
+.cat-Beauty{color:#f87171;border-color:#f8717130;background:#f8717108}
+.cat-Kitchen{color:#2dd4bf;border-color:#2dd4bf30;background:#2dd4bf08}
+
+/* ── Table ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:var(--r2);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--bg3)}
+thead th{padding:10px 14px;text-align:left;font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);font-weight:400}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg3)}
+td{padding:10px 14px;color:var(--text2)}
+td.mono{font-family:var(--font-mono);font-size:11px}
+td.highlight{color:var(--text);font-weight:500}
+.rank-num{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:var(--bg3);padding:1px 6px;border-radius:3px;border:1px solid var(--border)}
+
+/* ── Bar chart ────────────────────────────────────────── */
+.bar-chart{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.bar-label{width:130px;color:var(--text2);font-size:11px;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:var(--bg3);border-radius:3px;height:22px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 8px;font-family:var(--font-mono);font-size:9px;font-weight:500;color:#000;transition:width .8s cubic-bezier(.4,0,.2,1);white-space:nowrap;overflow:hidden}
+
+/* ── History panel ────────────────────────────────────── */
+.history-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.history-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.history-stars{color:var(--amber);font-size:11px;letter-spacing:1px}
+.history-name{flex:1;font-size:13px;color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── PageRank vis ─────────────────────────────────────── */
+.pagerank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.pr-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .15s;cursor:default}
+.pr-card:hover{border-color:var(--border2)}
+.pr-num{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--accent);letter-spacing:-.04em;min-width:28px;text-align:right}
+.pr-info{flex:1;min-width:0}
+.pr-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-val{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:1px}
+
+/* ── Loading spinner ──────────────────────────────────── */
+.spinner{width:36px;height:36px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:12px;padding:24px;color:var(--text2);font-size:13px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);font-size:13px}
+.empty-state .empty-icon{font-size:28px;margin-bottom:10px;opacity:.5}
+
+/* ── About ────────────────────────────────────────────── */
+.pipeline-step{display:flex;gap:14px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px}
+.step-num{font-family:var(--font-mono);font-size:11px;color:var(--accent);font-weight:500;min-width:22px;margin-top:1px}
+.step-content{flex:1}
+.step-title{font-weight:500;font-size:13px;color:var(--text);margin-bottom:3px}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.tech-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);color:var(--text2);background:var(--bg4)}
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg4);border:1px solid var(--border2);padding:12px 18px;border-radius:10px;font-size:13px;color:var(--text);z-index:200;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Responsive tweaks ────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{width:60px;min-width:60px}
+  .logo-title,.logo-sub,.logo-badge,.nav-section,.nav-item span{display:none}
+  .nav-item{justify-content:center;padding:12px}
+  .page{padding:20px 16px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Init Overlay -->
+<div id="init-overlay">
+  <div class="init-box">
+    <!--<div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.12em;margin-bottom:14px">PROJECT 36 — BDA LAB RCOEM</div>-->
+    <div class="init-title">Graph-Based<br/>Recommendation<br/>System</div>
+    <div class="init-sub">Amazon Product Reviews · Apache Spark · PageRank</div>
+    <div class="init-logo">ML + Link Analysis</div>
+    <div class="init-progress">
+      <div class="progress-track"><div class="progress-fill" id="init-bar"></div></div>
+      <div class="progress-msg" id="init-msg">Click to initialize the Spark engine</div>
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" id="init-btn" onclick="startInit()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+        Initialize System
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">GraphRec</div>
+      <!--<div class="logo-sub">BDA LAB · SEM VI</div>
+      <div class="logo-badge">PROJECT 36</div>-->
+    </div>
+    <nav>
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('recommend',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span>Recommend</span>
+      </div>
+      <div class="nav-section">Analytics</div>
+      <div class="nav-item" onclick="showPage('pagerank',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <span>PageRank</span>
+      </div>
+      <div class="nav-item" onclick="showPage('categories',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span>Categories</span>
+      </div>
+      <div class="nav-item" onclick="showPage('products',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span>Products</span>
+      </div>
+      <div class="nav-section">Info</div>
+      <div class="nav-item" onclick="showPage('about',this)">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>About</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-label" id="status-label">Idle</span>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-desc">Graph statistics and system overview for the recommendation engine</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Products</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-reviews">—</div><div class="stat-label">Reviews</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-edges">—</div><div class="stat-label">Graph Edges</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-nodes">—</div><div class="stat-label">PageRank Nodes</div></div>
+      </div>
+      <div class="section-title">Category PageRank Distribution</div>
+      <div class="card">
+        <div id="cat-bars"><div class="loading-row"><div class="spinner"></div> Loading category data...</div></div>
+      </div>
+    </div>
+
+    <!-- Recommend -->
+    <div class="page" id="page-recommend">
+      <div class="page-header">
+        <div class="page-title">Recommendations</div>
+        <div class="page-desc">Select a user to see their personalised product recommendations via graph link analysis</div>
+      </div>
+      <div class="user-select-row">
+        <select class="search-input" id="user-select" onchange="loadRecommendations()" style="width:180px">
+          <option value="">Select user...</option>
+        </select>
+        <select class="search-input" id="topn-select" onchange="loadRecommendations()" style="width:140px">
+          <option value="5">Top 5</option>
+          <option value="10" selected>Top 10</option>
+          <option value="15">Top 15</option>
+          <option value="20">Top 20</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadRecommendations()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-5.41"/></svg>
+          Refresh
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start" id="rec-layout">
+        <div>
+          <div class="section-title">Recommended Products</div>
+          <div id="rec-results"><div class="empty-state"><div class="empty-icon">⬡</div>Select a user to get recommendations</div></div>
+        </div>
+        <div>
+          <div class="section-title">Rated History</div>
+          <div id="history-panel"><div class="empty-state"><div class="empty-icon">⬡</div>No user selected</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PageRank -->
+    <div class="page" id="page-pagerank">
+      <div class="page-header">
+        <div class="page-title">PageRank Scores</div>
+        <div class="page-desc">Products ranked by their graph influence — high PageRank = frequently co-purchased with other influential products</div>
+      </div>
+      <div class="section-title">Top 20 Products by PageRank</div>
+      <div class="pagerank-grid" id="pr-grid"><div class="loading-row"><div class="spinner"></div> Computing PageRank...</div></div>
+    </div>
+
+    <!-- Categories -->
+    <div class="page" id="page-categories">
+      <div class="page-header">
+        <div class="page-title">Category Analysis</div>
+        <div class="page-desc">Average and maximum PageRank influence per product category</div>
+      </div>
+      <div class="section-title">Category Statistics</div>
+      <div class="table-wrap" id="cat-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
+    </div>
+
+    <!-- Products -->
+    <div class="page" id="page-products">
+      <div class="page-header">
+        <div class="page-title">Product Catalogue</div>
+        <div class="page-desc">All products in the dataset with their metadata</div>
+      </div>
+      <div class="user-select-row">
+        <input class="search-input" id="product-search" placeholder="Search products..." oninput="filterProducts()" style="width:280px"/>
+        <select class="search-input" id="cat-filter" onchange="filterProducts()" style="width:160px">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="table-wrap" id="products-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
+    </div>
+
+    <!-- About -->
+    <div class="page" id="page-about">
+      <div class="page-header">
+        <div class="page-title">About</div>
+        <div class="page-desc">Recommendation System using Graph-Based Link Analysis</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px">Project Details</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text2)">
+            <div><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">UNIT</span><br/>ML + Graph + Advanced Analytics</div>
+            <div><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">CONCEPTS</span><br/>Graph Theory · PageRank · Link Analysis · Spark</div>
+            <div><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">DATASET</span><br/>Amazon product reviews (2000+ records)</div>
+            <div><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">EXECUTION</span><br/>Docker · Apache Spark 3.5 · Flask UI</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px">Tech Stack</div>
+          <div class="tech-chips">
+            <span class="chip">Apache Spark 3.5</span><span class="chip">PySpark</span><span class="chip">Flask</span>
+            <span class="chip">Docker</span><span class="chip">Python 3.9+</span><span class="chip">PageRank</span>
+            <span class="chip">Graph Theory</span><span class="chip">Link Analysis</span><span class="chip">REST API</span>
+          </div>
+        </div>
+      </div>
+      <div class="section-title">Algorithm Pipeline</div>
+      <div class="pipeline-step"><div class="step-num">01</div><div class="step-content"><div class="step-title">Load Amazon Reviews Dataset</div><div class="step-desc">Reads reviews.csv, products.csv, users.csv into Spark DataFrames with defined schemas. 200 users, 100 products, ~2000 reviews.</div></div></div>
+      <div class="pipeline-step"><div class="step-num">02</div><div class="step-content"><div class="step-title">Build Weighted User→Product Graph</div><div class="step-desc">Edge weight = rating (1–5) + verified bonus (0.5) + helpful votes ratio (0–0.5). Captures quality of interaction.</div></div></div>
+      <div class="pipeline-step"><div class="step-num">03</div><div class="step-content"><div class="step-title">Project to Product↔Product Co-interaction Graph</div><div class="step-desc">Self-join on user_id: two products are linked if the same user rated both. Edge weight = product of both weights.</div></div></div>
+      <div class="pipeline-step"><div class="step-num">04</div><div class="step-content"><div class="step-title">Run Iterative PageRank (10 iterations, d=0.85)</div><div class="step-desc">rank(v) = (1−d)/N + d × Σ[rank(u) × w(u,v) / Σw(u,·)]. Products co-purchased with influential products rank higher.</div></div></div>
+      <div class="pipeline-step"><div class="step-num">05</div><div class="step-content"><div class="step-title">Generate Recommendations</div><div class="step-desc">For a user, find unrated products. Score = co_interaction_weight × PageRank. Return top-N by final score.</div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let allProducts = [], allCategories = new Set();
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function startInit() {
+  const btn = document.getElementById('init-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Initializing...';
+  await fetch('/api/init', {method:'POST'});
+  pollStatus();
+}
+
+function pollStatus() {
+  const interval = setInterval(async () => {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    document.getElementById('init-bar').style.width = s.progress + '%';
+    document.getElementById('init-msg').textContent = s.message;
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('status-label');
+    if (s.status === 'ready') {
+      clearInterval(interval);
+      dot.className = 'status-dot ready';
+      label.textContent = 'Ready';
+      setTimeout(() => {
+        document.getElementById('init-overlay').style.opacity = '0';
+        document.getElementById('init-overlay').style.transition = 'opacity .5s';
+        setTimeout(() => document.getElementById('init-overlay').style.display = 'none', 500);
+        loadDashboard(); loadUsers(); loadPagerank(); loadCategories(); loadProductTable();
+      }, 600);
+    } else if (s.status === 'loading') {
+      dot.className = 'status-dot loading';
+      label.textContent = 'Loading';
+    } else if (s.status === 'error') {
+      clearInterval(interval);
+      dot.className = 'status-dot error';
+      label.textContent = 'Error';
+      document.getElementById('init-msg').textContent = s.message;
+      document.getElementById('init-btn').disabled = false;
+      document.getElementById('init-btn').textContent = 'Retry';
+    }
+  }, 800);
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const s = await (await fetch('/api/stats')).json();
+  document.getElementById('stat-users').textContent    = s.total_users?.toLocaleString() || '—';
+  document.getElementById('stat-products').textContent = s.total_products?.toLocaleString() || '—';
+  document.getElementById('stat-reviews').textContent  = s.total_reviews?.toLocaleString() || '—';
+  document.getElementById('stat-edges').textContent    = s.graph_edges?.toLocaleString() || '—';
+  document.getElementById('stat-nodes').textContent    = s.pagerank_nodes?.toLocaleString() || '—';
+  const cats = await (await fetch('/api/category-stats')).json();
+  const max = Math.max(...cats.map(c=>c.avg_pagerank));
+  const colors = ['#4fffb0','#00d4ff','#a78bfa','#fbbf24','#f472b6','#60a5fa','#34d399','#fb923c'];
+  document.getElementById('cat-bars').innerHTML = `<div class="bar-chart">`+
+    cats.map((c,i)=>`<div class="bar-row">
+      <div class="bar-label">${c.category}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%;background:${colors[i%colors.length]}" data-w="${(c.avg_pagerank/max*100).toFixed(1)}">${(c.avg_pagerank*1000).toFixed(3)}</div>
+      </div>
+    </div>`).join('')+`</div>`;
+  setTimeout(()=>document.querySelectorAll('.bar-fill').forEach(b=>{b.style.width=b.dataset.w+'%'}),100);
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const users = await (await fetch('/api/users')).json();
+  const sel = document.getElementById('user-select');
+  sel.innerHTML = '<option value="">Select user...</option>' +
+    users.map(u=>`<option value="${u.user_id}">${u.user_id} — ${u.username}</option>`).join('');
+}
+
+// ── Recommendations ────────────────────────────────────────────────────────
+async function loadRecommendations() {
+  const uid = document.getElementById('user-select').value;
+  const topn = document.getElementById('topn-select').value;
+  if (!uid) return;
+  document.getElementById('rec-results').innerHTML = '<div class="loading-row"><div class="spinner"></div> Computing recommendations...</div>';
+  document.getElementById('history-panel').innerHTML = '<div class="loading-row"><div class="spinner"></div> Loading history...</div>';
+  const [recs, hist] = await Promise.all([
+    fetch(`/api/recommend/${uid}?top_n=${topn}`).then(r=>r.json()),
+    fetch(`/api/history/${uid}`).then(r=>r.json()),
+  ]);
+  const maxScore = Math.max(...recs.map(r=>r.final_score||r.pagerank||0));
+  document.getElementById('rec-results').innerHTML = recs.length ?
+    `<div class="rec-grid">` + recs.map((r,i)=>`
+      <div class="rec-card" style="animation-delay:${i*40}ms">
+        <div class="rec-rank">RANK #${i+1}</div>
+        <div class="rec-name">${r.product_name}</div>
+        <div><span class="rec-cat cat-${r.category}">${r.category}</span></div>
+        <div class="rec-meta">
+          <span class="rec-price">₹${(r.price||0).toFixed(0)}</span>
+          <span class="rec-score">score: ${(r.final_score||0).toFixed(4)}</span>
+        </div>
+        <div class="rec-bar"><div class="rec-bar-fill" style="width:${maxScore?((r.final_score||0)/maxScore*100).toFixed(1):0}%"></div></div>
+      </div>`).join('') + `</div>` :
+    '<div class="empty-state"><div class="empty-icon">⬡</div>No recommendations found</div>';
+  document.getElementById('history-panel').innerHTML = hist.length ?
+    `<div class="history-list">` + hist.slice(0,20).map(h=>`
+      <div class="history-item">
+        <span class="history-stars">${'★'.repeat(Math.round(h.weight||3))}</span>
+        <span class="history-name">${h.product_name}</span>
+        <span class="rec-cat cat-${h.category}" style="flex-shrink:0">${h.category}</span>
+      </div>`).join('') + `</div>` :
+    '<div class="empty-state">No history</div>';
+}
+
+// ── PageRank ───────────────────────────────────────────────────────────────
+async function loadPagerank() {
+  const data = await (await fetch('/api/top-products?n=20')).json();
+  document.getElementById('pr-grid').innerHTML = data.map((p,i)=>`
+    <div class="pr-card">
+      <div class="pr-num">${i+1}</div>
+      <div class="pr-info">
+        <div class="pr-name">${p.product_name}</div>
+        <div class="pr-val">${p.pagerank} · <span class="rec-cat cat-${p.category}" style="font-size:9px">${p.category}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Categories ─────────────────────────────────────────────────────────────
+async function loadCategories() {
+  const data = await (await fetch('/api/category-stats')).json();
+  const max = Math.max(...data.map(d=>d.avg_pagerank));
+  const colors = ['#4fffb0','#00d4ff','#a78bfa','#fbbf24','#f472b6','#60a5fa','#34d399','#fb923c'];
+  document.getElementById('cat-table').innerHTML = `
+    <table>
+      <thead><tr><th>#</th><th>Category</th><th>Avg PageRank</th><th>Max PageRank</th><th>Products</th><th>Influence</th></tr></thead>
+      <tbody>`+data.map((c,i)=>`
+        <tr>
+          <td><span class="rank-num">${i+1}</span></td>
+          <td><span class="rec-cat cat-${c.category}">${c.category}</span></td>
+          <td class="mono highlight">${c.avg_pagerank}</td>
+          <td class="mono">${c.max_pagerank}</td>
+          <td class="mono">${c.product_count}</td>
+          <td style="width:120px">
+            <div class="bar-track" style="height:14px">
+              <div class="bar-fill" style="width:${(c.avg_pagerank/max*100).toFixed(1)}%;background:${colors[i%colors.length]};font-size:0"></div>
+            </div>
+          </td>
+        </tr>`).join('')+`</tbody></table>`;
+}
+
+// ── Products ───────────────────────────────────────────────────────────────
+async function loadProductTable() {
+  allProducts = await (await fetch('/api/products')).json();
+  allProducts.forEach(p => allCategories.add(p.category));
+  const sel = document.getElementById('cat-filter');
+  sel.innerHTML = '<option value="">All categories</option>' +
+    [...allCategories].sort().map(c=>`<option value="${c}">${c}</option>`).join('');
+  renderProducts(allProducts);
+}
+
+function filterProducts() {
+  const q = document.getElementById('product-search').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  const filtered = allProducts.filter(p =>
+    (!q || p.product_name.toLowerCase().includes(q) || p.product_id.toLowerCase().includes(q)) &&
+    (!cat || p.category === cat));
+  renderProducts(filtered);
+}
+
+function renderProducts(list) {
+  document.getElementById('products-table').innerHTML = `
+    <table>
+      <thead><tr><th>ID</th><th>Product Name</th><th>Category</th><th>Price</th></tr></thead>
+      <tbody>`+list.map(p=>`
+        <tr>
+          <td class="mono">${p.product_id}</td>
+          <td class="highlight">${p.product_name}</td>
+          <td><span class="rec-cat cat-${p.category}">${p.category}</span></td>
+          <td class="mono rec-price">₹${(p.price||0).toFixed(2)}</td>
+        </tr>`).join('')+`</tbody></table>`;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── Boot: check if already ready ──────────────────────────────────────────
+(async () => {
+  const s = await (await fetch('/api/status')).json();
+  if (s.status === 'ready') {
+    document.getElementById('init-overlay').style.display = 'none';
+    loadDashboard(); loadUsers(); loadPagerank(); loadCategories(); loadProductTable();
+    document.getElementById('status-dot').className = 'status-dot ready';
+    document.getElementById('status-label').textContent = 'Ready';
+  }
+})();
+</script>
+</body>
+</html>
