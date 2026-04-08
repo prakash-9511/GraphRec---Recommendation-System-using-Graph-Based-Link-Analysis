@@ -1,10 +1,10 @@
 # Project 36 — Graph-Based Recommendation System with UI
-**BDA Lab | Semester VI | RCOEM Nagpur | 2025–2026**
+
 
 ---
 
 ## Tech Stack
-- Apache Spark 3.5 (PySpark DataFrames)
+- Apache Spark 3.4.1 (PySpark DataFrames)
 - Flask (Python web server + REST API)
 - Full Web UI (HTML/CSS/JS — no framework)
 - Docker + Docker Compose
