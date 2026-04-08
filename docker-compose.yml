@@ -1,0 +1,13 @@
+services:
+  graphrec:
+    build: .
+    container_name: graphrec-project36
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    environment:
+      - DATA_DIR=/app/data
+      - PORT=5000
+    restart: unless-stopped
